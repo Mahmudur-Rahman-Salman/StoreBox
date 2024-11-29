@@ -8,7 +8,6 @@ import {Button} from "@/components/ui/button"
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -18,26 +17,58 @@ import {Input} from "@/components/ui/input"
 import {useState} from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {createAccount, signInUser} from "@/lib/actions/user.actions";
+import OtpModal from "@/components/OTPModal";
 
-const formSchema = z.object({
-    username: z.string().min(2).max(50),
-})
 
 type FormType = "sign-in" | "sign-up";
+
+const authFormSchema = (formType: FormType) => {
+    return z.object({
+        email: z.string().email(),
+        fullName:
+            formType === "sign-up"
+                ? z.string().min(2).max(50)
+                : z.string().optional(),
+    });
+};
 
 const AuthForm = ({type}: { type: FormType }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [accountId, setAccountId] = useState(null);
+
+
+    const formSchema = authFormSchema(type);
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            username: "",
+            fullName: "",
+            email: "",
         },
     })
 
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
-        console.log(values)
+        setIsLoading(true);
+        setErrorMessage("");
+
+
+        try {
+            const user =
+                type === "sign-up"
+                    ? await createAccount({
+                        fullName: values.fullName || "",
+                        email: values.email,
+                    })
+                    : await signInUser({email: values.email});
+
+            setAccountId(user.accountId);
+        } catch {
+            setErrorMessage("Failed to create account. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     }
 
 
@@ -123,6 +154,9 @@ const AuthForm = ({type}: { type: FormType }) => {
 
                 </form>
             </Form>
+            {accountId && (
+                <OtpModal email={form.getValues("email")} accountId={accountId}/>
+            )}
         </>
     );
 
