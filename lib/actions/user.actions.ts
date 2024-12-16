@@ -1,15 +1,12 @@
 "use server";
 
-// import {createAdminClient, createSessionClient} from "@/lib/appwrite";
 import { createAdminClient, createSessionClient } from "@/lib/appwrite";
 import { appwriteConfig } from "@/lib/appwrite/config";
 import { Query, ID } from "node-appwrite";
 import { parseStringify } from "@/lib/utils";
 import { cookies } from "next/headers";
-
-import { redirect } from "next/navigation";
 import { avatarPlaceholderUrl } from "@/constants";
-
+import { redirect } from "next/navigation";
 
 const getUserByEmail = async (email: string) => {
   const { databases } = await createAdminClient();
@@ -23,10 +20,14 @@ const getUserByEmail = async (email: string) => {
   return result.total > 0 ? result.documents[0] : null;
 };
 
+
+
 const handleError = (error: unknown, message: string) => {
   console.log(error, message);
   throw error;
 };
+
+
 
 export const sendEmailOTP = async ({ email }: { email: string }) => {
   const { account } = await createAdminClient();
@@ -39,6 +40,8 @@ export const sendEmailOTP = async ({ email }: { email: string }) => {
     handleError(error, "Failed to send email OTP");
   }
 };
+
+
 
 export const createAccount = async ({
   fullName,
@@ -71,6 +74,10 @@ export const createAccount = async ({
   return parseStringify({ accountId });
 };
 
+
+
+
+
 export const verifySecret = async ({
   accountId,
   password,
@@ -96,6 +103,10 @@ export const verifySecret = async ({
   }
 };
 
+
+
+
+
 export const getCurrentUser = async () => {
   try {
     const { databases, account } = await createSessionClient();
@@ -116,6 +127,9 @@ export const getCurrentUser = async () => {
   }
 };
 
+
+
+
 export const signOutUser = async () => {
   const { account } = await createSessionClient();
 
@@ -128,6 +142,9 @@ export const signOutUser = async () => {
     redirect("/sign-in");
   }
 };
+
+
+
 
 export const signInUser = async ({ email }: { email: string }) => {
   try {
