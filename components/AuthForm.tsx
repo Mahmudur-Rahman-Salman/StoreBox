@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
- 
+
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,7 +24,9 @@ type FormType = "sign-in" | "sign-up";
 
 const authFormSchema = (formType: FormType) => {
   return z.object({
-    email: z.string().email(),
+    email: z.string().email({
+      message: "Invalid email address",
+    }),
     fullName:
       formType === "sign-up"
         ? z.string().min(2).max(50)
