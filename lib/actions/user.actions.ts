@@ -30,7 +30,7 @@ export const sendEmailOTP = async ({ email }: { email: string }) => {
 
   try {
     const session = await account.createEmailToken(ID.unique(), email);
-
+    console.log("OTP Sent:", session);
     return session.userId;
   } catch (error) {
     handleError(error, "Failed to send email OTP");
@@ -46,29 +46,39 @@ export const createAccount = async ({
 }) => {
   const existingUser = await getUserByEmail(email);
 
-  // If user already exists, return an error instead of proceeding with signup
   if (existingUser) {
     throw new Error("User already exists. Please sign in.");
   }
 
-  const accountId = await sendEmailOTP({ email });
-  if (!accountId) throw new Error("Failed to send an OTP");
+  const { account } = await createAdminClient();
 
-  const { databases } = await createAdminClient();
+  try {
+    // Create the user in Appwrite first
+    const newUser = await account.create(ID.unique(), email, "random-password");
+    console.log("User Created:", newUser);
 
-  await databases.createDocument(
-    appwriteConfig.databaseId,
-    appwriteConfig.usersCollectionId,
-    ID.unique(),
-    {
-      fullName,
-      email,
-      avatar: avatarPlaceholderUrl,
-      accountId,
-    }
-  );
+    // Send OTP after user creation
+    const accountId = await sendEmailOTP({ email });
+    if (!accountId) throw new Error("Failed to send OTP");
 
-  return parseStringify({ accountId });
+    const { databases } = await createAdminClient();
+
+    await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.usersCollectionId,
+      ID.unique(),
+      {
+        fullName,
+        email,
+        avatar: avatarPlaceholderUrl,
+        accountId,
+      }
+    );
+
+    return parseStringify({ accountId });
+  } catch (error) {
+    handleError(error, "Failed to create account");
+  }
 };
 
 export const verifySecret = async ({
